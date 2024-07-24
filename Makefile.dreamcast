@@ -1,0 +1,43 @@
+# H.O.T.A 1.2.2
+# An updated port for Sega Dreamcast, with MP3 support!
+# Note: 1.2.4 CVS has serious bugs on Dreamcast, at stage 2. This one is more stable!
+
+# Put the filename of the output binary here
+TARGET = hota.elf
+
+OBJS=\
+	common.o vm.o sprites.o decode.o animation.o rooms.o \
+	render.o main.o music.o debug.o lzss.o cd_iso.o sound.o \
+	screen.o scale2x.o scale3x.o game2bin.o sfx.o
+
+all: rm-elf $(TARGET)
+
+# Chui DREAMCAST SDL
+INCLUDES = -I$(KOS_BASE)/addons/include/SDL -I$(KOS_BASE)/../kos-ports/include/xingmp3
+
+# FLAGS: -DENABLE_DEBUG IS A MUST TO GET GAME WORKING!!!
+# Also, at main.c you can set debug_flag = 1 :)
+#
+KOS_CFLAGS += $(INCLUDES) -DENABLE_DEBUG -DDREAMCAST -ffast-math -funroll-loops -fomit-frame-pointer -fmessage-length=0
+
+include $(KOS_BASE)/Makefile.rules
+
+clean:
+	-rm -f $(TARGET) $(OBJS)
+
+rm-elf:
+	-rm -f $(TARGET)
+
+$(TARGET): $(OBJS) $(PROBJS)
+	$(KOS_CC) $(KOS_CFLAGS) $(KOS_LDFLAGS) -o $(TARGET) $(KOS_START) \
+		$(OBJS) $(PROBJS) $(OBJEXTRA) -L$(KOS_BASE)/lib -lgcc -lmp3 -lSDL_1213 -lm $(KOS_LIBS)
+
+run: $(TARGET)
+	$(KOS_LOADER) $(TARGET)
+
+dist:
+	rm -f $(OBJS)
+	$(KOS_STRIP) $(TARGET)
+	
+bin:
+	$(KOS_OBJCOPY) -O binary -R .stack $(TARGET) hota.bin
